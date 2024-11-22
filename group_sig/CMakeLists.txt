@@ -24,7 +24,7 @@ list(APPEND HEADERS ${DEVCORE_HEADERS})
 
 find_package(GMP REQUIRED)
 
-add_library(group_sig STATIC ${SRC_LIST} ${HEADERS})
+add_library(group_sig SHARED ${SRC_LIST} ${HEADERS})
 
 find_package(jsoncpp CONFIG REQUIRED)
 find_package(cryptopp CONFIG REQUIRED)

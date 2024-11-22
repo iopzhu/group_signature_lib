@@ -17,7 +17,15 @@ HunterGate(
 )
 
 project(group-signature-lib)
+
+# 指定动态链接库的源文件。假设你的源文件是 group_sig.cpp
+# set(SOURCE_FILES group_sig.cpp)
+
 set(GROUP_SIG_DIR "${CMAKE_CURRENT_LIST_DIR}" CACHE PATH "Path to the root directory for group sig")
+
+# 生成动态链接库
+# add_library(group_sig_lib SHARED ${GROUP_SIG_DIR})
+# set_target_properties(group_sig_lib PROPERTIES LINKER_LANGUAGE CXX)
 
 find_package(GMP REQUIRED)
 

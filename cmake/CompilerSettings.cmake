@@ -58,7 +58,7 @@ if (("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" MA
 
 	option(USE_LD_GOLD "Use GNU gold linker" ON)
 	option(ARCH_NATIVE "Use native cpu instruction set" OFF)
-	set(MARCH_TYPE "-march=x86-64 -mtune=generic -fvisibility=hidden -fvisibility-inlines-hidden")
+	set(MARCH_TYPE "-march=native -mtune=generic -fvisibility=hidden -fvisibility-inlines-hidden")
 	if(ARCH_NATIVE)
 	if(APPLE) 
             set(MARCH_TYPE "-mtune=generic -fvisibility=hidden -fvisibility-inlines-hidden")

@@ -37,10 +37,8 @@ using namespace RetCode::CommonStatusCode;
 GroupSigMethod SIG_METHOD = BBS04;
 
 #if defined(__cplusplus)
-namespace GroupSigApi
-{
-#endif
 
+#endif
 inline vector<string> split_to_vector(const std::string &str, const string &delim)
 {
         char *outer = NULL;
@@ -53,6 +51,7 @@ inline vector<string> split_to_vector(const std::string &str, const string &deli
         }
         return result_vec;
 }
+
 
 inline std::string decode_strings(const std::string &str, const string &delim)
 {
@@ -74,7 +73,9 @@ inline std::string decode_strings(const std::string &str, const string &delim)
         }
         return result.substr(0, result.length() - delim.length());
 }
-std::string get_cert(const std::string &sk_info)
+extern "C" {
+
+__attribute__((visibility("default"))) char* get_cert(const std::string &sk_info)
 {
         std::string sk;
         try
@@ -95,10 +96,15 @@ std::string get_cert(const std::string &sk_info)
         {
                 throw errorMsg;
         }
-        return ToBase64(temp);
+        std::string result = ToBase64(temp);
+        // 使用 c_str() 返回 char* 类型指针
+        const char* char_result = result.c_str();
+        
+        // 这里进行了强制类型转换，因为 c_str() 返回的是 const char*
+        return const_cast<char*>(char_result);
 }
 
-std::string get_g1_list(std::vector<std::string> &new_gpks_info)
+__attribute__((visibility("default"))) char* get_g1_list(std::vector<std::string> &new_gpks_info)
 {
         std::string result;
         try
@@ -114,19 +120,24 @@ std::string get_g1_list(std::vector<std::string> &new_gpks_info)
         {
                 throw errorMsg;
         }
-        return result.substr(0, result.length() - BBSGroupSig::RL_GONE_DELIM.length());
+        std::string result1 = result.substr(0, result.length() - BBSGroupSig::RL_GONE_DELIM.length());
+        // 使用 c_str() 返回 char* 类型指针
+        const char* char_result = result1.c_str();
+        
+        // 这里进行了强制类型转换，因为 c_str() 返回的是 const char*
+        return const_cast<char*>(char_result);
 }
 
-int create_group_default(std::string &result,
-                         const std::string &algorithm_method)
-{
-        LOG(DEBUG) << "CREATE GROUP WITH DEFAULT PARAM";
-        GroupSigMethod method = get_algo_method_by_string(algorithm_method);
-        std::string param = "";
-        return GroupSigFactory::instance(method)->create_group(result, param);
-}
+// int create_group_default(std::string &result,
+//                          const std::string &algorithm_method)
+// {
+//         LOG(DEBUG) << "CREATE GROUP WITH DEFAULT PARAM";
+//         GroupSigMethod method = get_algo_method_by_string(algorithm_method);
+//         std::string param = "";
+//         return GroupSigFactory::instance(method)->create_group(result, param);
+// }
 
-GroupInfo create_group_default()
+__attribute__((visibility("default"))) GroupInfo* create_group_default()
 {
         std::string temp;
         std::string param = "";
@@ -134,22 +145,24 @@ GroupInfo create_group_default()
         {
                 throw std::string("create group failed");
         }
+
         vector<string> vs = split_to_vector(temp, BBSGroupSig::RET_DELIM);
-        GroupInfo result(vs[0], vs[1], vs[2], vs[3]);
+
+        GroupInfo* result = new GroupInfo(vs[0], vs[1], vs[2], vs[3]);
         return result;
 }
 
-int create_group(std::string &result,
-                 const std::string &algorithm_method,
-                 const std::string &pbc_param)
-{
-        LOG(DEBUG) << "CREATE GROUP WITH SPECIFIED PARAM:" << pbc_param;
-        LOG(DEBUG) << "METHOD = " << algorithm_method;
-        GroupSigMethod method = get_algo_method_by_string(algorithm_method);
-        return GroupSigFactory::instance(method)->create_group(result, pbc_param);
-}
+// int create_group(std::string &result,
+//                  const std::string &algorithm_method,
+//                  const std::string &pbc_param)
+// {
+//         LOG(DEBUG) << "CREATE GROUP WITH SPECIFIED PARAM:" << pbc_param;
+//         LOG(DEBUG) << "METHOD = " << algorithm_method;
+//         GroupSigMethod method = get_algo_method_by_string(algorithm_method);
+//         return GroupSigFactory::instance(method)->create_group(result, pbc_param);
+// }
 
-GroupInfo create_group(const std::string &pbc_param)
+__attribute__((visibility("default"))) GroupInfo* create_group(const std::string &pbc_param)
 {
         std::string temp;
         if (GroupSigFactory::instance(SIG_METHOD)->create_group(temp, pbc_param))
@@ -157,53 +170,59 @@ GroupInfo create_group(const std::string &pbc_param)
                 throw std::string("create group failed");
         }
         vector<string> vs = split_to_vector(temp, BBSGroupSig::RET_DELIM);
-        GroupInfo result(vs[0], vs[1], vs[2], vs[3]);
+
+        GroupInfo* result = new GroupInfo(vs[0], vs[1], vs[2], vs[3]);
         return result;
 }
 
 //group  member join: group manager generate private key && cert for group members
-int group_member_join(std::string &sk,
-                      const std::string &algorithm_method,
-                      const std::string &param_info,
-                      const std::string &gmsk_info,
-                      const std::string &gpk_info,
-                      const std::string &gamma_info)
-{
-        LOG(DEBUG) << "GROUP MEMBER JOIN";
-        LOG(DEBUG) << "METHOD = " << algorithm_method;
-        GroupSigMethod method = get_algo_method_by_string(algorithm_method);
-        std::string param, gmsk, gpk, gamma;
-        try
-        {
-                param = FromBase64(param_info);
-                gmsk = FromBase64(gmsk_info);
-                gpk = FromBase64(gpk_info);
-                gamma = FromBase64(gamma_info);
-        }
-        catch (std::string &errorMsg)
-        {
-                LOG(DEBUG) << errorMsg;
-                return DECODE_BASE64_ERR;
-        }
+// int group_member_join(std::string &sk,
+//                       const std::string &algorithm_method,
+//                       const std::string &param_info,
+//                       const std::string &gmsk_info,
+//                       const std::string &gpk_info,
+//                       const std::string &gamma_info)
+// {
+//         LOG(DEBUG) << "GROUP MEMBER JOIN";
+//         LOG(DEBUG) << "METHOD = " << algorithm_method;
+//         GroupSigMethod method = get_algo_method_by_string(algorithm_method);
+//         std::string param, gmsk, gpk, gamma;
+//         try
+//         {
+//                 param = FromBase64(param_info);
+//                 gmsk = FromBase64(gmsk_info);
+//                 gpk = FromBase64(gpk_info);
+//                 gamma = FromBase64(gamma_info);
+//         }
+//         catch (std::string &errorMsg)
+//         {
+//                 LOG(DEBUG) << errorMsg;
+//                 return DECODE_BASE64_ERR;
+//         }
 
-        std::string params = param + _get_split_symbol();
-        params += gmsk + _get_split_symbol();
-        params += gpk + _get_split_symbol();
-        params += gamma;
-        LOG(DEBUG) << "PARAMS IS:" << params;
-        std::string sk_info;
-        int ret = GroupSigFactory::instance(method)->gen_gsk(sk_info, params);
-        if (ret == SUCCESS)
-        {
-                sk = ToBase64(sk_info);
-        }
-        return ret;
-}
+//         std::string params = param + _get_split_symbol();
+//         params += gmsk + _get_split_symbol();
+//         params += gpk + _get_split_symbol();
+//         params += gamma;
+//         LOG(DEBUG) << "PARAMS IS:" << params;
+//         std::string sk_info;
+//         int ret = GroupSigFactory::instance(method)->gen_gsk(sk_info, params);
+//         if (ret == SUCCESS)
+//         {
+//                 sk = ToBase64(sk_info);
+//         }
+//         return ret;
+// }
 
-std::string group_member_join(const std::string &param_info,
-                              const std::string &gmsk_info,
-                              const std::string &gpk_info,
-                              const std::string &gamma_info)
+
+// __attribute__((visibility("default"))) char* group_member_join(const std::string &param_info,
+//                               const std::string &gmsk_info,
+//                               const std::string &gpk_info,
+//                               const std::string &gamma_info)
+__attribute__((visibility("default"))) char* group_member_join(char* param_info,
+                              char* gmsk_info,
+                              char* gpk_info,
+                              char* gamma_info)
 {
         std::string param, gmsk, gpk, gamma;
         try
@@ -226,56 +245,68 @@ std::string group_member_join(const std::string &param_info,
         {
                 throw std::string("join group failed");
         }
-        return ToBase64(sk_info);
+        return strdup(sk_info.c_str());
+        // return ToBase64(sk_info);
+
+        // std::string result1 = ToBase64(sk_info);
+        // // 使用 c_str() 返回 char* 类型指针
+        // const char* char_result = result1.c_str();
+        
+        // // 这里进行了强制类型转换，因为 c_str() 返回的是 const char*
+        // return const_cast<char*>(char_result);
 }
 
 //implementation of group sig
-int group_sig(std::string &sig,
-              const std::string &algorithm_method,
-              const std::string &gpk_info,
-              const std::string &sk_info,
-              const std::string &param_info,
-              const std::string &message)
-{
-        LOG(DEBUG) << "GROUP SIG";
-        LOG(DEBUG) << "METHOD = " << algorithm_method;
-        GroupSigMethod method = get_algo_method_by_string(algorithm_method);
-        std::string gpk, sk, param;
-        try
-        {
-                gpk = FromBase64(gpk_info);
-                sk = FromBase64(sk_info);
-                param = FromBase64(param_info);
-        }
-        catch (std::string &errorMsg)
-        {
-                LOG(DEBUG) << errorMsg;
-                return DECODE_BASE64_ERR;
-        }
-        std::string params = gpk + _get_split_symbol();
-        params += sk + _get_split_symbol();
-        params += param + _get_split_symbol();
-        params += message;
-        LOG(DEBUG) << "PARAMS is:" << params;
-        std::string signature;
-        int ret = GroupSigFactory::instance(method)->group_sig(signature, params);
-        if (ret == SUCCESS)
-        {
-                sig = ToBase64(signature);
-        }
-        return ret;
-}
+// int group_sig(std::string &sig,
+//               const std::string &algorithm_method,
+//               const std::string &gpk_info,
+//               const std::string &sk_info,
+//               const std::string &param_info,
+//               const std::string &message)
+// {
+//         LOG(DEBUG) << "GROUP SIG";
+//         LOG(DEBUG) << "METHOD = " << algorithm_method;
+//         GroupSigMethod method = get_algo_method_by_string(algorithm_method);
+//         std::string gpk, sk, param;
+//         try
+//         {
+//                 gpk = FromBase64(gpk_info);
+//                 sk = FromBase64(sk_info);
+//                 param = FromBase64(param_info);
+//         }
+//         catch (std::string &errorMsg)
+//         {
+//                 LOG(DEBUG) << errorMsg;
+//                 return DECODE_BASE64_ERR;
+//         }
+//         std::string params = gpk + _get_split_symbol();
+//         params += sk + _get_split_symbol();
+//         params += param + _get_split_symbol();
+//         params += message;
+//         LOG(DEBUG) << "PARAMS is:" << params;
+//         std::string signature;
+//         int ret = GroupSigFactory::instance(method)->group_sig(signature, params);
+//         if (ret == SUCCESS)
+//         {
+//                 sig = ToBase64(signature);
+//         }
+//         return ret;
+// }
 
-std::string group_sig(const std::string &gpk_info,
-                      const std::string &sk_info,
-                      const std::string &param_info,
-                      const std::string &message)
+__attribute__((visibility("default"))) char* group_sig(char* gpk_info,
+                      char* sk_info,
+                      char* param_info,
+                      char* message)
 {
-        std::string gpk, sk, param;
+        std::string gpk, sk, param, mes;
         try
         {
+                // 将 char* 转换为 std::string
+                std::string paramStr(sk_info);
                 gpk = FromBase64(gpk_info);
-                sk = FromBase64(sk_info);
+                // std::cout << "gpk_info is:::: " << gpk_info << std::endl;
+                // std::cout << "gpk is:::: " << gpk << std::endl;
+                // sk = FromBase64(sk_info);
                 param = FromBase64(param_info);
         }
         catch (std::string &errorMsg)
@@ -283,7 +314,8 @@ std::string group_sig(const std::string &gpk_info,
                 throw errorMsg;
         }
         std::string params = gpk + _get_split_symbol();
-        params += sk + _get_split_symbol();
+        params += sk_info + _get_split_symbol();
+        // params += sk + _get_split_symbol();
         params += param + _get_split_symbol();
         params += message;
         std::string signature;
@@ -291,44 +323,50 @@ std::string group_sig(const std::string &gpk_info,
         {
                 throw std::string("group sig failed");
         }
-        return ToBase64(signature);
+        return strdup(signature.c_str());
+        // std::string result1 = ToBase64(signature);
+        // // 使用 c_str() 返回 char* 类型指针
+        // const char* char_result = result1.c_str();
+        
+        // // 这里进行了强制类型转换，因为 c_str() 返回的是 const char*
+        // return const_cast<char*>(char_result);
 }
 
 //implementation of group verify
-int group_verify(int &valid,
-                 const std::string &sig,
-                 const std::string &message,
-                 const std::string &algorithm_method,
-                 const std::string &gpk_info,
-                 const std::string &param_info)
-{
-        LOG(DEBUG) << "BBS04 GROUP VERFIFY";
-        LOG(DEBUG) << "METHOD = " << algorithm_method;
-        GroupSigMethod method = get_algo_method_by_string(algorithm_method);
-        std::string signature, gpk, param;
-        try
-        {
-                signature = FromBase64(sig);
-                gpk = FromBase64(gpk_info);
-                param = FromBase64(param_info);
-        }
-        catch (std::string &errorMsg)
-        {
-                LOG(DEBUG) << errorMsg;
-                return DECODE_BASE64_ERR;
-        }
-        std::string params = signature + _get_split_symbol();
-        params += message + _get_split_symbol();
-        params += gpk + _get_split_symbol();
-        params += param;
-        LOG(DEBUG) << "PARAMS:" << params;
-        return GroupSigFactory::instance(method)->group_verify(valid, params);
-}
+// int group_verify(int &valid,
+//                  const std::string &sig,
+//                  const std::string &message,
+//                  const std::string &algorithm_method,
+//                  const std::string &gpk_info,
+//                  const std::string &param_info)
+// {
+//         LOG(DEBUG) << "BBS04 GROUP VERFIFY";
+//         LOG(DEBUG) << "METHOD = " << algorithm_method;
+//         GroupSigMethod method = get_algo_method_by_string(algorithm_method);
+//         std::string signature, gpk, param;
+//         try
+//         {
+//                 signature = FromBase64(sig);
+//                 gpk = FromBase64(gpk_info);
+//                 param = FromBase64(param_info);
+//         }
+//         catch (std::string &errorMsg)
+//         {
+//                 LOG(DEBUG) << errorMsg;
+//                 return DECODE_BASE64_ERR;
+//         }
+//         std::string params = signature + _get_split_symbol();
+//         params += message + _get_split_symbol();
+//         params += gpk + _get_split_symbol();
+//         params += param;
+//         LOG(DEBUG) << "PARAMS:" << params;
+//         return GroupSigFactory::instance(method)->group_verify(valid, params);
+// }
 
-bool group_verify(const std::string &sig,
-                  const std::string &message,
-                  const std::string &gpk_info,
-                  const std::string &param_info)
+__attribute__((visibility("default"))) bool group_verify(char* sig,
+                  char* message,
+                  char* gpk_info,
+                  char* param_info)
 {
         std::string signature, gpk, param;
         try
@@ -361,46 +399,46 @@ bool group_verify(const std::string &sig,
 }
 
 //implementation of group open with given signature
-int open_cert(std::string &cert,
-              const std::string &algorithm_method,
-              const std::string &sig,
-              const std::string &message,
-              const std::string &gpk_info,
-              const std::string &gmsk_info,
-              const std::string &param_info)
-{
-        LOG(DEBUG) << "BBS04 OPEN CERT";
-        LOG(DEBUG) << "METHOD = " << algorithm_method;
-        GroupSigMethod method = get_algo_method_by_string(algorithm_method);
-        std::string signature, gpk, gmsk, param;
-        try
-        {
-                signature = FromBase64(sig);
-                gpk = FromBase64(gpk_info);
-                gmsk = FromBase64(gmsk_info);
-                param = FromBase64(param_info);
-        }
-        catch (std::string &errorMsg)
-        {
-                LOG(DEBUG) << errorMsg;
-                return DECODE_BASE64_ERR;
-        }
+// int open_cert(std::string &cert,
+//               const std::string &algorithm_method,
+//               const std::string &sig,
+//               const std::string &message,
+//               const std::string &gpk_info,
+//               const std::string &gmsk_info,
+//               const std::string &param_info)
+// {
+//         LOG(DEBUG) << "BBS04 OPEN CERT";
+//         LOG(DEBUG) << "METHOD = " << algorithm_method;
+//         GroupSigMethod method = get_algo_method_by_string(algorithm_method);
+//         std::string signature, gpk, gmsk, param;
+//         try
+//         {
+//                 signature = FromBase64(sig);
+//                 gpk = FromBase64(gpk_info);
+//                 gmsk = FromBase64(gmsk_info);
+//                 param = FromBase64(param_info);
+//         }
+//         catch (std::string &errorMsg)
+//         {
+//                 LOG(DEBUG) << errorMsg;
+//                 return DECODE_BASE64_ERR;
+//         }
 
-        std::string params = signature + _get_split_symbol();
-        params += message + _get_split_symbol();
-        params += gpk + _get_split_symbol();
-        params += gmsk + _get_split_symbol();
-        params += param;
-        LOG(DEBUG) << "PARAMS:" << params;
-        std::string temp;
-        int ret = GroupSigFactory::instance(method)->group_open(temp, params);
-        if (ret == SUCCESS)
-        {
-                cert = ToBase64(temp);
-        }
-        return ret;
-}
-std::string open_cert(const std::string &sig,
+//         std::string params = signature + _get_split_symbol();
+//         params += message + _get_split_symbol();
+//         params += gpk + _get_split_symbol();
+//         params += gmsk + _get_split_symbol();
+//         params += param;
+//         LOG(DEBUG) << "PARAMS:" << params;
+//         std::string temp;
+//         int ret = GroupSigFactory::instance(method)->group_open(temp, params);
+//         if (ret == SUCCESS)
+//         {
+//                 cert = ToBase64(temp);
+//         }
+//         return ret;
+// }
+__attribute__((visibility("default"))) char* open_cert(const std::string &sig,
                       const std::string &message,
                       const std::string &gpk_info,
                       const std::string &gmsk_info,
@@ -429,45 +467,51 @@ std::string open_cert(const std::string &sig,
         {
                 throw std::string("open group signature failed");
         }
-        return ToBase64(cert);
+
+        std::string result1 = ToBase64(cert);
+        // 使用 c_str() 返回 char* 类型指针
+        const char* char_result = result1.c_str();
+        
+        // 这里进行了强制类型转换，因为 c_str() 返回的是 const char*
+        return const_cast<char*>(char_result);
 }
 
 //update gpk when group memeber revoked
-int revoke_member(std::string &gpk_info,
-                  const std::string &algorithm_method,
-                  const std::string &param_info,
-                  const std::string &revoke_info,
-                  const std::string &gamma_info)
-{
-        LOG(DEBUG) << "BBS04 REVOKE MEMBER";
-        LOG(DEBUG) << "METHOD = " << algorithm_method;
-        GroupSigMethod method = get_algo_method_by_string(algorithm_method);
-        std::string gpk, param, revoke, gamma;
-        try
-        {
-                gpk = FromBase64(gpk_info);
-                param = FromBase64(param_info);
-                revoke = FromBase64(revoke_info);
-                gamma = FromBase64(gamma_info);
-        }
-        catch (std::string &errorMsg)
-        {
-                LOG(DEBUG) << errorMsg;
-                return DECODE_BASE64_ERR;
-        }
-        std::string params = param + _get_split_symbol();
-        params += revoke + _get_split_symbol();
-        params += gamma;
+// int revoke_member(std::string &gpk_info,
+//                   const std::string &algorithm_method,
+//                   const std::string &param_info,
+//                   const std::string &revoke_info,
+//                   const std::string &gamma_info)
+// {
+//         LOG(DEBUG) << "BBS04 REVOKE MEMBER";
+//         LOG(DEBUG) << "METHOD = " << algorithm_method;
+//         GroupSigMethod method = get_algo_method_by_string(algorithm_method);
+//         std::string gpk, param, revoke, gamma;
+//         try
+//         {
+//                 gpk = FromBase64(gpk_info);
+//                 param = FromBase64(param_info);
+//                 revoke = FromBase64(revoke_info);
+//                 gamma = FromBase64(gamma_info);
+//         }
+//         catch (std::string &errorMsg)
+//         {
+//                 LOG(DEBUG) << errorMsg;
+//                 return DECODE_BASE64_ERR;
+//         }
+//         std::string params = param + _get_split_symbol();
+//         params += revoke + _get_split_symbol();
+//         params += gamma;
 
-        LOG(DEBUG) << "PARAMS:" << params;
-        int ret = GroupSigFactory::instance(method)->gm_revoke(gpk, params);
-        if (ret == SUCCESS)
-        {
-                gpk_info = ToBase64(gpk);
-        }
-        return ret;
-}
-std::string revoke_member(const std::string &gpk_info,
+//         LOG(DEBUG) << "PARAMS:" << params;
+//         int ret = GroupSigFactory::instance(method)->gm_revoke(gpk, params);
+//         if (ret == SUCCESS)
+//         {
+//                 gpk_info = ToBase64(gpk);
+//         }
+//         return ret;
+// }
+__attribute__((visibility("default"))) char* revoke_member(const std::string &gpk_info,
                           const std::string &param_info,
                           const std::string &revoke_info,
                           const std::string &gamma_info)
@@ -491,48 +535,53 @@ std::string revoke_member(const std::string &gpk_info,
         {
                 throw std::string("revoke member failed");
         }
-        return ToBase64(gpk);
+        std::string result1 = ToBase64(gpk);
+        // 使用 c_str() 返回 char* 类型指针
+        const char* char_result = result1.c_str();
+        
+        // 这里进行了强制类型转换，因为 c_str() 返回的是 const char*
+        return const_cast<char*>(char_result);
 }
 
 //update group member private key after some members revoked
-int revoke_update_private_key(std::string &sk_info,
-                              const std::string &algorithm_method,
-                              const std::string &param_info,
-                              const std::string &revoke_list,
-                              const std::string &g1_list,
-                              const std::string &gpk_info)
-{
-        LOG(DEBUG) << "UPDATE SK AFTER REVOKE member";
-        LOG(DEBUG) << "METHOD = " << algorithm_method;
-        GroupSigMethod method = get_algo_method_by_string(algorithm_method);
-        std::string sk, param, revokes, g1s, gpk;
-        try
-        {
-                sk = FromBase64(sk_info);
-                param = FromBase64(param_info);
-                revokes = decode_strings(revoke_list, BBSGroupSig::RL_DELIM);
-                g1s = decode_strings(g1_list, BBSGroupSig::RL_GONE_DELIM);
-                gpk = FromBase64(gpk_info);
-        }
-        catch (std::string &errorMsg)
-        {
-                LOG(DEBUG) << errorMsg;
-                return DECODE_BASE64_ERR;
-        }
-        std::string params = param + _get_split_symbol();
-        params += revokes + _get_split_symbol();
-        params += g1s + _get_split_symbol();
-        params += gpk;
-        LOG(DEBUG) << "PARAMS:" << params;
-        std::string temp;
-        int ret = GroupSigFactory::instance(method)->update_gsk(sk, params);
-        if (ret == SUCCESS)
-        {
-                sk_info = ToBase64(sk);
-        }
-        return ret;
-}
-std::string revoke_update_private_key(const std::string &sk_info,
+// int revoke_update_private_key(std::string &sk_info,
+//                               const std::string &algorithm_method,
+//                               const std::string &param_info,
+//                               const std::string &revoke_list,
+//                               const std::string &g1_list,
+//                               const std::string &gpk_info)
+// {
+//         LOG(DEBUG) << "UPDATE SK AFTER REVOKE member";
+//         LOG(DEBUG) << "METHOD = " << algorithm_method;
+//         GroupSigMethod method = get_algo_method_by_string(algorithm_method);
+//         std::string sk, param, revokes, g1s, gpk;
+//         try
+//         {
+//                 sk = FromBase64(sk_info);
+//                 param = FromBase64(param_info);
+//                 revokes = decode_strings(revoke_list, BBSGroupSig::RL_DELIM);
+//                 g1s = decode_strings(g1_list, BBSGroupSig::RL_GONE_DELIM);
+//                 gpk = FromBase64(gpk_info);
+//         }
+//         catch (std::string &errorMsg)
+//         {
+//                 LOG(DEBUG) << errorMsg;
+//                 return DECODE_BASE64_ERR;
+//         }
+//         std::string params = param + _get_split_symbol();
+//         params += revokes + _get_split_symbol();
+//         params += g1s + _get_split_symbol();
+//         params += gpk;
+//         LOG(DEBUG) << "PARAMS:" << params;
+//         std::string temp;
+//         int ret = GroupSigFactory::instance(method)->update_gsk(sk, params);
+//         if (ret == SUCCESS)
+//         {
+//                 sk_info = ToBase64(sk);
+//         }
+//         return ret;
+// }
+__attribute__((visibility("default"))) char* revoke_update_private_key(const std::string &sk_info,
                                       const std::string &param_info,
                                       const std::string &revoke_list,
                                       const std::string &g1_list,
@@ -560,9 +609,16 @@ std::string revoke_update_private_key(const std::string &sk_info,
         {
                 throw std::string("rupdate group member private key failed");
         }
-        return ToBase64(sk);
+        std::string result1 = ToBase64(sk);
+        // 使用 c_str() 返回 char* 类型指针
+        const char* char_result = result1.c_str();
+        
+        // 这里进行了强制类型转换，因为 c_str() 返回的是 const char*
+        return const_cast<char*>(char_result);
+}
+
 }
 
 #if defined(__cplusplus)
-}
+
 #endif
